@@ -120,7 +120,7 @@ new Promise((resolve, reject) => {
           fs.existsSync(path.join(migrationToolFolder, migration, "index.ts"))
             ? new Promise((resolve, reject) => {
                 let stream = exec(
-                  `find "${extensionPath}" \\( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' \\) -not -path "*/node_modules/*" | xargs "${jscodeshift}" --verbose=2 --extensions=tsx,ts,jsx,js --parser=tsx -t ./${migration}/index.ts`,
+                  `find "${extensionPath}" \\( -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' -o -name '*.json' \\) -not -path "*/node_modules/*" | xargs "${jscodeshift}" --verbose=2 --extensions=tsx,ts,jsx,js --parser=tsx -t ./${migration}/index.ts`,
                   { cwd: migrationToolFolder },
                   (err, stdout, stderr) => {
                     if (err) {
