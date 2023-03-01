@@ -9,7 +9,7 @@ import {
   openCommandPreferences,
 } from "@raycast/api";
 import { useState } from "react";
-import { Configuration, OpenAIApi } from "openai";
+import { Configuration, OpenAIApi, CreateChatCompletionResponseChoicesInner } from "openai";
 import request from "axios";
 import { encode } from "./encoder";
 import * as example from "../assets/examples";
@@ -34,6 +34,32 @@ interface gptCompletion {
   statusText: string;
   request?: any;
   data: any;
+}
+
+interface chatGPTCompletionChoice {
+  index: number;
+  message: {
+    role: string;
+    content: string;
+  };
+  finish_reason: string;
+}
+
+interface chatGPTCompletion {
+  status: number;
+  statusText: string;
+  request?: any;
+  data: {
+    id: string;
+    object: string;
+    created: number;
+    choices: chatGPTCompletionChoice[];
+    usage: {
+      prompt_tokens: number;
+      completion_tokens: number;
+      total_tokens: number;
+    };
+  };
 }
 
 interface modelTokenLimit {
@@ -64,6 +90,8 @@ export default function Command() {
   const [maxModelTokens, setMaxModelTokens] = useState<number>(maxTokensDavinci);
 
   const modelLimit = {} as modelTokenLimit;
+  modelLimit["gpt-3.5-turbo"] = maxTokensDavinci;
+  modelLimit["gpt-3.5-turbo-0301"] = maxTokensDavinci;
   modelLimit["text-davinci-003"] = maxTokensDavinci;
   modelLimit["text-davinci-002"] = maxTokensDavinci;
   modelLimit["text-curie-001"] = maxTokensAdaBabbageCurie;
@@ -119,21 +147,33 @@ export default function Command() {
     await showToast({ title: "Prompt Sent" });
     setIsLoading(true);
     try {
-      const completion: gptCompletion = await openai.createCompletion({
-        model: formRequest.model,
-        prompt: formRequest.prompt,
-        temperature: Number(formRequest.temperature),
-        max_tokens: Number(formRequest.maxTokens),
-        top_p: Number(formRequest.topP),
-        frequency_penalty: Number(formRequest.frequencyPenalty),
-        presence_penalty: Number(formRequest.presencePenalty),
-      });
-      await showToast({ title: "Answer Received" });
-      const response = completion.data.choices[0].text;
-      setTextPrompt(textPrompt + response);
-      setAnswer(response);
-      setNumTokensPrompt(completion.data.usage.total_tokens);
+      if (formRequest.model === "gpt-3.5-turbo" || formRequest.model === "gpt-3.5-turbo-0301") {
+        const chatResponse: chatGPTCompletion = await openai.createChatCompletion({
+          model: formRequest.model,
+          messages: [{ role: "user", content: formRequest.prompt }],
+        });
+        const response = chatResponse.data.choices[0].message.content;
+        setTextPrompt(textPrompt + response);
+        setAnswer(response);
+        setNumTokensPrompt(chatResponse.data.usage.total_tokens);
+      } else{
+        const completion: gptCompletion = await openai.createCompletion({
+          model: formRequest.model,
+          prompt: formRequest.prompt,
+          temperature: Number(formRequest.temperature),
+          max_tokens: Number(formRequest.maxTokens),
+          top_p: Number(formRequest.topP),
+          frequency_penalty: Number(formRequest.frequencyPenalty),
+          presence_penalty: Number(formRequest.presencePenalty),
+        });
+        await showToast({ title: "Answer Received" });
+        const response = completion.data.choices[0].text;
+        setTextPrompt(textPrompt + response);
+        setAnswer(response);
+        setNumTokensPrompt(completion.data.usage.total_tokens);
+      }
     } catch (error) {
+      console.log(error);
       if (request.isAxiosError(error) && error.response) {
         await showToast({ style: Toast.Style.Failure, title: "Error:", message: error.response.data.error.message });
       } else {
@@ -227,6 +267,8 @@ export default function Command() {
         info={infoMessages.model}
         onChange={(newValue: string) => setMaxModelTokens(modelLimit[newValue])}
       >
+        <Form.Dropdown.Item value="gpt-3.5-turbo" title="gpt-3.5-turbo" />
+        <Form.Dropdown.Item value="gpt-3.5-turbo-0301" title="gpt-3.5-turbo-0301" />
         <Form.Dropdown.Item value="text-davinci-003" title="text-davinci-003" />
         <Form.Dropdown.Item value="text-davinci-002" title="text-davinci-002" />
         <Form.Dropdown.Item value="text-curie-001" title="text-curie-001" />

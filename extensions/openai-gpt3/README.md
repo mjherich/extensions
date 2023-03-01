@@ -47,13 +47,15 @@ You can set different parameters for the AI model:
 
 ### Supported AI Models
 
-1. `text-davinci-003`
-2. `text-davinci-002`
-3. `text-curie-001`
-4. `text-babbage-001`
-5. `text-ada-001`
-6. `code-davinci-002`
-7. `code-cushman-001`
+1. `gpt-3.5-turbo-0301`
+2. `gpt-3.5-turbo`
+3. `text-davinci-003`
+4. `text-davinci-002`
+5. `text-curie-001`
+6. `text-babbage-001`
+7. `text-ada-001`
+8. `code-davinci-002`
+9. `code-cushman-001`
 
 ## Token Count
 
